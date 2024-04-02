@@ -11,15 +11,7 @@
         int CorrelationId { get; set; }
         int UserId { get; set; }
         bool isSuccessful { get; set; }
-        int Id { get; set; }
-        string Name { get; set; }
-        string Description { get; set; }
-        decimal Price { get; set; }
-        int Stock { get; set; }
-        string Image {  get; set; }
-        decimal Discount { get; set; }
-        string ProductCode { get; set; }
-        List<Reviews> Reviews { get; set; }
+        List<Product> Products { get; set; }
     }
 
     public interface Reviews
@@ -28,5 +20,18 @@
         int Name { get; set; }
         string? Description { get; set; }
         int Rating { get; set; }
+    }
+
+    public interface Product
+    {
+        int Id { get; set; }
+        string Name { get; set; }
+        string Description { get; set; }
+        decimal Price { get; set; }
+        int Stock { get; set; }
+        string Image { get; set; }
+        decimal Discount { get; set; }
+        string ProductCode { get; set; }
+        List<Reviews> Reviews { get; set; }
     }
 }
