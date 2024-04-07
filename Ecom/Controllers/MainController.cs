@@ -1,7 +1,10 @@
 ﻿using Dapper;
 using Ecom.Commands;
+using Ecom.Data;
 using Ecom.Models;
+using Ecom.ViewModels;
 using MassTransit;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using System;
@@ -9,35 +12,41 @@ using System;
 namespace Ecom.Controllers
 {
 
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class MainController : ControllerBase
     {
-        //public readonly IRequestClient<GetAllProductsCommand> _getAllProductsClient;
         private readonly IConfiguration _config;
-        //private readonly IRequestClient<GetAllProductsCommand> _getAllProductsClient;
 
         public MainController (IConfiguration config)
         {
-            //_getAllProductsClient = getAllProductsClient;
             _config = config;
-            //_getAllProductsClient = getAllProductsClient;
         }
 
         [HttpGet("[action]")]
-        public async Task<ActionResult<List<Product>>> GetAllProducts()
+        public async Task<ActionResult<List<Products>>> GetAllProducts()
         {
-            using var conn = new SqlConnection(_config.GetConnectionString("DefaultConnectionString"));
-            //var result = await _getAllProductsClient.GetResponse<GetAllProductsResult>(new { CorrelationId = new Guid().ToString(), UserId = 1 });
-            var products = await conn.QueryAsync<Products>("select * from Products");
-            //var result = await _getAllProductsClient.RespondAsync<GetAllProductsResult>(new
-            //{
-            //    isSuccessful = true,
-            //    CorrelationId = new Guid().ToString(),
-            //    UserId = 1,
-            //    Products = products
-            //});
+            List<Products> products;
+            using (var conn = new SqlConnection(_config.GetConnectionString("DefaultConnectionString")))
+            {
+                await conn.OpenAsync();
+                products = (List<Products>)await conn.QueryAsync<Products>("select * from Products");
+            }
+            return Ok(products);
+        }
+
+        [HttpGet("[action]/{Id}")]
+        public async Task<ActionResult<List<Products>>> GetProductsBySearchCriteria(int Id)
+        {
+            List<Products> products;
+            using(var conn = new SqlConnection(_config.GetConnectionString("DefaultConnectionString")))
+            {
+                await conn.OpenAsync();
+                products = (List<Products>)await conn.QueryAsync<Products>("select * from Products where Category = @CategoryId", new { CategoryId = Id});
+            }
             return Ok(products);
         }
     }
+
 }
