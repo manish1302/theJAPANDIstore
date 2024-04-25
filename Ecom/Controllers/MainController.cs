@@ -37,6 +37,7 @@ namespace Ecom.Controllers
         }
 
         [HttpGet("[action]/{Id}")]
+        [AllowAnonymous]
         public async Task<ActionResult<List<Products>>> GetProductsBySearchCriteria(int Id)
         {
             List<Products> products;
