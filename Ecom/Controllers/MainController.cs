@@ -25,6 +25,7 @@ namespace Ecom.Controllers
         }
 
         [HttpGet("[action]")]
+        [AllowAnonymous]
         public async Task<ActionResult<List<Products>>> GetAllProducts()
         {
             List<Products> products;
@@ -48,6 +49,18 @@ namespace Ecom.Controllers
             }
             return Ok(products);
         }
+
+        [HttpGet("[action]/{Id}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<Products>> GetProductById(int Id)
+        {
+            using (var conn = new SqlConnection(_config.GetConnectionString("DefaultConnectionString")))
+            {
+                await conn.OpenAsync();
+                var result = await conn.QueryFirstOrDefaultAsync<Products>("select * from products where id = @Id", new { Id = Id });
+                return Ok(result);
+            }
+        } 
     }
 
 }
