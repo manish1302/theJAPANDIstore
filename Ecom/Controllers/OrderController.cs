@@ -39,8 +39,8 @@ namespace Ecom.Controllers
             }
         }
 
-        [HttpPost("GetOrders")]
-        public async Task<ActionResult<List<OrderProducts>>> GetOrders([FromBody] string userEmailId)
+        [HttpGet("GetOrders/{userEmailId}")]
+        public async Task<ActionResult<List<OrderProducts>>> GetOrders(string userEmailId)
         {
             using (var conn = new SqlConnection(_config.GetConnectionString("DefaultConnectionString")))
             {

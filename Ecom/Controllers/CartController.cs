@@ -33,6 +33,19 @@ namespace Ecom.Controllers
             }
         }
 
+        [HttpPost("Like")]
+        public async Task<ActionResult<Cart>> Like([FromBody] CartInputModel likeInput)
+        {
+            using(var conn = new SqlConnection(_config.GetConnectionString("DefaultConnectionString")))
+            {
+                await conn.OpenAsync();
+                Cart like = await conn.QueryFirstOrDefaultAsync<Cart>(@"Insert into Likes (emailId, ProductId)
+                  values (@Email, @Pid); Select * from Likes where emailId = @Email and Productid = @Pid", new { Email = likeInput.UserEmailId, Pid = likeInput.ProductId });
+
+                return Ok(like);
+            }
+        }
+
         [HttpGet("GetCartItems/{emailid}")]
         public async Task<ActionResult<List<CartProduct>>> GetCartItems(string emailid)
         {
@@ -45,6 +58,17 @@ namespace Ecom.Controllers
 
         }
 
+        [HttpGet("GetLikeItems/{emailid}")]
+        public async Task<ActionResult<List<CartProduct>>> GetLikeItems(string emailid)
+        {
+            using (var conn = new SqlConnection(_config.GetConnectionString("DefaultConnectionString")))
+            {
+                string query = "select Products.Id, Products.Name, Products.ProductCode, Products.Stock, Products.Price from Products inner join Likes on Products.Id = Likes.ProductId where Likes.emailId = @email";
+                var result = (List<CartProduct>)await conn.QueryAsync<CartProduct>(query, new { email = emailid });
+                return Ok(result);
+            }
+        }
+
         [HttpPost("RemoveFromCart")]
         public async void RemoveFromCart([FromBody] CartInputModel cartInputModel)
         {
@@ -52,6 +76,16 @@ namespace Ecom.Controllers
             {
                 await conn.OpenAsync();
                 await conn.QueryAsync("SET ROWCOUNT 1 delete from cart where userEmailId = @EmailId and productId = @Id SET ROWCOUNT 0", new { EmailId = cartInputModel.UserEmailId, Id = cartInputModel.ProductId });
+            }
+        }
+
+        [HttpPost("RemoveLike")]
+        public async void RemoveLike([FromBody] CartInputModel likeInput)
+        {
+            using (var conn = new SqlConnection(_config.GetConnectionString("DefaultConnectionString")))
+            {
+                await conn.OpenAsync();
+                await conn.QueryAsync("SET ROWCOUNT 1 delete from Likes where emailid = @EmailId and productId = @Id SET ROWCOUNT 0", new { EmailId = likeInput.UserEmailId, Id = likeInput.ProductId });
             }
         }
 
@@ -70,6 +104,17 @@ namespace Ecom.Controllers
                 {
                     return false;
                 }
+            }
+        }
+
+        [HttpPost("IsLikedProduct")]
+        public async Task<bool> IsLikedProduct(CartInputModel likeInput)
+        {
+            using (var conn = new SqlConnection(_config.GetConnectionString("DefaultConnectionString")))
+            {
+                await conn.OpenAsync();
+                var LikeID = await conn.QueryFirstOrDefaultAsync<int>("select Id from Likes where productid = @Pid and emailid = @emailid", new { Pid = likeInput.ProductId, emailid = likeInput.UserEmailId });
+                return LikeID > 0 ? true : false;
             }
         }
     }

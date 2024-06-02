@@ -15,6 +15,7 @@
         public DateTime UpdatedDate { get; set;}
         public int Popularity { get; set; }
         public decimal Rating { get; set; }
+        public int RatedUsers { get; set; }
 
     }
 }

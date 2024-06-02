@@ -5,6 +5,6 @@
         public int Id { get; set; }
         public string UserEmailId { get; set; }
         public int ProductId { get; set; }
-        public int stock {  get; set; }
+        public int? stock {  get; set; }
     }
 }
