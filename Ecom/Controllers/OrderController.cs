@@ -19,7 +19,7 @@ namespace Ecom.Controllers
         }
 
         [HttpPost("ConfirmOrder")]
-        public async Task<IActionResult> ConfirmOrder([FromBody] OrderViewModel orderViewModel)
+        public async Task<ActionResult<List<OrderProducts>>> ConfirmOrder([FromBody] OrderViewModel orderViewModel)
         {
             using (var conn = new SqlConnection(_config.GetConnectionString("DefaultConnectionString")))
             {
@@ -35,7 +35,25 @@ namespace Ecom.Controllers
                     await conn.ExecuteAsync("Insert into OrderItems (OrderId, ProductId, Quantity) values (@OrderId, @ProductId, @quantity)",new {OrderId = item.OrderId, ProductId = item.ProductId, quantity = item.quantity});
                 }
 
-                return Ok(OrdId);
+                List<OrderProducts> result = new List<OrderProducts>();
+                var query1 = "select Id from orders where UserEmailId = @user";
+                var OrdIdList = await conn.QueryAsync<int>(query1, new { user = orderViewModel.EmailId });
+                foreach (var item in OrdIdList)
+                {
+                    OrderProducts Order = new OrderProducts();
+                    List<Products> OrderProds = new List<Products>();
+                    Order.OrderId = item;
+                    var OrderByIdList = await conn.QueryAsync<OrderItems>("select * from OrderItems where OrderId = @Id", new { Id = item });
+                    foreach (var product in OrderByIdList)
+                    {
+                        var ProductDetails = await conn.QueryFirstOrDefaultAsync<Products>("Select * from products where Id = @Pid", new { Pid = product.ProductId });
+                        ProductDetails.Stock = product.quantity;
+                        OrderProds.Add(ProductDetails);
+                    }
+                    Order.Products = OrderProds;
+                    result.Add(Order);
+                }
+                return Ok(result);
             }
         }
 

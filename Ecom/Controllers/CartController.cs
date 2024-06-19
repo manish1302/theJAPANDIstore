@@ -26,23 +26,25 @@ namespace Ecom.Controllers
             using(var db = new SqlConnection(_config.GetConnectionString("DefaultConnectionString")))
             {
                 await db.OpenAsync();
-                Cart cart = await db.QueryFirstOrDefaultAsync<Cart>(@"Insert into Cart (UserEmailId, ProductId) 
+                await db.QueryAsync(@"Insert into Cart (UserEmailId, ProductId) 
                     values (@Email, @Pid); Select * from cart where UserEmailId = @Email and Productid = @Pid", new {Email = cartInput.UserEmailId, Pid = cartInput.ProductId});
-
-                return Ok(cart);
+                string query = "select Products.Id, Products.Name, Products.ProductCode, Products.Stock, Products.Price from Products inner join Cart on Products.Id = Cart.ProductId where Cart.UserEmailId = @email";
+                var result = (List<CartProduct>)await db.QueryAsync<CartProduct>(query, new { email = cartInput.UserEmailId });
+                return Ok(result);
             }
         }
 
         [HttpPost("Like")]
-        public async Task<ActionResult<Cart>> Like([FromBody] CartInputModel likeInput)
+        public async Task<ActionResult<List<CartProduct>>> Like([FromBody] CartInputModel likeInput)
         {
             using(var conn = new SqlConnection(_config.GetConnectionString("DefaultConnectionString")))
             {
                 await conn.OpenAsync();
-                Cart like = await conn.QueryFirstOrDefaultAsync<Cart>(@"Insert into Likes (emailId, ProductId)
-                  values (@Email, @Pid); Select * from Likes where emailId = @Email and Productid = @Pid", new { Email = likeInput.UserEmailId, Pid = likeInput.ProductId });
-
-                return Ok(like);
+                await conn.QueryAsync(@"Insert into Likes (emailId, ProductId)
+                  values (@Email, @Pid);", new { Email = likeInput.UserEmailId, Pid = likeInput.ProductId });
+                string query = "select Products.Id, Products.Name, Products.ProductCode, Products.Stock, Products.Price from Products inner join Likes on Products.Id = Likes.ProductId where Likes.emailId = @email";
+                var result = (List<CartProduct>)await conn.QueryAsync<CartProduct>(query, new { email = likeInput.UserEmailId });
+                return Ok(result);
             }
         }
 
@@ -70,22 +72,40 @@ namespace Ecom.Controllers
         }
 
         [HttpPost("RemoveFromCart")]
-        public async void RemoveFromCart([FromBody] CartInputModel cartInputModel)
+        public async Task<ActionResult<List<CartProduct>>> RemoveFromCart([FromBody] CartInputModel cartInputModel)
         {
             using(var conn = new SqlConnection(_config.GetConnectionString("DefaultConnectionString")))
             {
                 await conn.OpenAsync();
                 await conn.QueryAsync("SET ROWCOUNT 1 delete from cart where userEmailId = @EmailId and productId = @Id SET ROWCOUNT 0", new { EmailId = cartInputModel.UserEmailId, Id = cartInputModel.ProductId });
+                string query = "select Products.Id, Products.Name, Products.ProductCode, Products.Stock, Products.Price from Products inner join Cart on Products.Id = Cart.ProductId where Cart.UserEmailId = @email";
+                var result = (List<CartProduct>)await conn.QueryAsync<CartProduct>(query, new { email = cartInputModel.UserEmailId });
+                return Ok(result);
+            }
+        }
+
+        [HttpPost("RemoveCompleteFromCart")]
+        public async Task<ActionResult<List<CartProduct>>> RemoveCompleteFromCart([FromBody] CartInputModel cartInputModel)
+        {
+            using (var conn = new SqlConnection(_config.GetConnectionString("DefaultConnectionString")))
+            {
+                await conn.OpenAsync();
+                await conn.QueryAsync("delete from cart where userEmailId = @EmailId and productId = @Id", new { EmailId = cartInputModel.UserEmailId, Id = cartInputModel.ProductId });
+                string query = "select Products.Id, Products.Name, Products.ProductCode, Products.Stock, Products.Price from Products inner join Cart on Products.Id = Cart.ProductId where Cart.UserEmailId = @email";
+                var result = (List<CartProduct>)await conn.QueryAsync<CartProduct>(query, new { email = cartInputModel.UserEmailId });
+                return Ok(result);
             }
         }
 
         [HttpPost("RemoveLike")]
-        public async void RemoveLike([FromBody] CartInputModel likeInput)
+        public async Task<ActionResult<List<CartProduct>>> RemoveLike([FromBody] CartInputModel likeInput)
         {
             using (var conn = new SqlConnection(_config.GetConnectionString("DefaultConnectionString")))
             {
                 await conn.OpenAsync();
                 await conn.QueryAsync("SET ROWCOUNT 1 delete from Likes where emailid = @EmailId and productId = @Id SET ROWCOUNT 0", new { EmailId = likeInput.UserEmailId, Id = likeInput.ProductId });
+                var result = (List<CartProduct>)await conn.QueryAsync<CartProduct>("select Products.Id, Products.Name, Products.ProductCode, Products.Stock, Products.Price from Products inner join Likes on Products.Id = Likes.ProductId where Likes.emailId = @email", new {email = likeInput.UserEmailId});
+                return result;
             }
         }
 
