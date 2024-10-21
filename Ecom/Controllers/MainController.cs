@@ -60,7 +60,31 @@ namespace Ecom.Controllers
                 var result = await conn.QueryFirstOrDefaultAsync<Products>("select * from products where id = @Id", new { Id = Id });
                 return Ok(result);
             }
-        } 
+        }
+
+        [HttpGet("[action]")]
+        [AllowAnonymous]
+        public async Task<ActionResult<Products>> GetDeals()
+        {
+            using (var conn = new SqlConnection(_config.GetConnectionString("DefaultConnectionString")))
+            {
+                await conn.OpenAsync();
+                var result = (List<Products>)await conn.QueryAsync<Products>("select * from products where discount != @Id", new { Id = 0 });
+                return Ok(result);
+            }
+        }
+
+        [HttpGet("[action]")]
+        [AllowAnonymous]
+        public async Task<ActionResult<Products>> GetLatest()
+        {
+            using (var conn = new SqlConnection(_config.GetConnectionString("DefaultConnectionString")))
+            {
+                await conn.OpenAsync();
+                var result = (List<Products>)await conn.QueryAsync<Products>("SELECT TOP 10 * FROM Products ORDER BY Id DESC");
+                return Ok(result);
+            }
+        }
     }
 
 }
